@@ -1,194 +1,194 @@
 # Copilot Instructions - Caldera Project
 
-## Panoramica del Progetto
+## Project Overview
 
-Questo è un fork del progetto **MITRE Caldera™** - una piattaforma di cyber security progettata per automatizzare l'emulazione degli avversari, assistere i red team manuali e automatizzare la risposta agli incidenti.
+This is a fork of the **MITRE Caldera™** project - a cyber security platform designed to automate adversary emulation, assist manual red teams, and automate incident response.
 
-- **Repository**: x3m-ai/caldera (fork da mitre/caldera)
+- **Repository**: x3m-ai/caldera (fork from mitre/caldera)
 - **Branch**: master
 - **Framework**: Python 3.12.3, aiohttp, Vue.js (Magma UI)
-- **Versione Node.js**: 20.19.5
+- **Node.js Version**: 20.19.5
 
-## Struttura del Progetto
+## Project Structure
 
 ### Core System
-- **server.py**: Entry point principale del server C2
-- **app/**: Codice principale del framework
+- **server.py**: Main C2 server entry point
+- **app/**: Core framework code
   - `api/`: REST API endpoints
-  - `contacts/`: Canali di comunicazione C2 (HTTP, DNS, TCP, WebSocket, etc.)
-  - `objects/`: Oggetti core (Agent, Ability, Adversary, Operation, etc.)
-  - `service/`: Servizi business logic
-  - `planners/`: Logica di planning delle operazioni
-  - `learning/`: Machine learning per learning automatico
+  - `contacts/`: C2 communication channels (HTTP, DNS, TCP, WebSocket, etc.)
+  - `objects/`: Core objects (Agent, Ability, Adversary, Operation, etc.)
+  - `service/`: Business logic services
+  - `planners/`: Operation planning logic
+  - `learning/`: Machine learning for automated learning
 
 ### Plugins
-Tutti i plugin sono gestiti come Git submodules in `plugins/`:
-- **access**: Strumenti di accesso iniziale per red team
-- **atomic**: TTPs del progetto Atomic Red Team
-- **builder**: Compilazione dinamica dei payload
-- **compass**: Visualizzazioni ATT&CK
-- **debrief**: Insights sulle operazioni
-- **fieldmanual**: Documentazione
+All plugins are managed as Git submodules in `plugins/`:
+- **access**: Initial access tools for red teams
+- **atomic**: Atomic Red Team project TTPs
+- **builder**: Dynamic payload compilation
+- **compass**: ATT&CK visualizations
+- **debrief**: Operation insights
+- **fieldmanual**: Documentation
 - **magma**: Vue.js UI (v5)
-- **manx**: Funzionalità shell e reverse shell
-- **sandcat**: Agent di default
-- **stockpile**: Repository di tecniche e profili
-- **training**: Certificazioni e corsi
+- **manx**: Shell and reverse shell functionality
+- **sandcat**: Default agent
+- **stockpile**: Repository of techniques and profiles
+- **training**: Certifications and courses
 
-### Configurazione
-- **conf/default.yml**: Configurazione principale
-- **conf/agents.yml**: Configurazione degli agent
+### Configuration
+- **conf/default.yml**: Main configuration
+- **conf/agents.yml**: Agent configuration
 - **Virtual Environment**: `.calderavenv/`
 
-## Setup Ambiente di Sviluppo
+## Development Environment Setup
 
 ```bash
-# Attivare l'ambiente virtuale
+# Activate virtual environment
 source .calderavenv/bin/activate
 
-# Avviare il server (modalità insecure per sviluppo)
+# Start server (insecure mode for development)
 python3 server.py --insecure
 
-# Accesso web UI
+# Web UI access
 http://localhost:8888
 
-# Credenziali default
+# Default credentials
 # Red API Key: ADMIN123
 # Blue API Key: BLUEADMIN123
 ```
 
-## Features Migliorate / Modifiche
+## Implemented Features / Changes
 
-### [Data: 2025-11-22] - Setup Iniziale
-- ✅ Configurato ambiente virtuale Python
-- ✅ Installate tutte le dipendenze da requirements.txt
-- ✅ Scaricati tutti i plugin con git submodules
-- ✅ Installato Node.js 20.x per compilare Magma UI
-- ✅ Compilato frontend Vue.js (plugins/magma/dist)
-- ✅ Server funzionante su porta 8888
+### [Date: 2025-11-22] - Initial Setup
+- ✅ Configured Python virtual environment
+- ✅ Installed all dependencies from requirements.txt
+- ✅ Downloaded all plugins with git submodules
+- ✅ Installed Node.js 20.x to compile Magma UI
+- ✅ Compiled Vue.js frontend (plugins/magma/dist)
+- ✅ Server running on port 8888
 
-### Note Tecniche
-- **Go non installato**: Alcune funzionalità di compilazione dinamica degli agent GoLang non disponibili
-- **Plugin Builder**: Richiede Docker (non installato, opzionale)
-- **Modalità insecure**: Per sviluppo, usa credenziali di default
+### Technical Notes
+- **Go not installed**: Some GoLang agent dynamic compilation features unavailable
+- **Builder Plugin**: Requires Docker (not installed, optional)
+- **Insecure mode**: For development, uses default credentials
 
-## Prossime Features da Implementare
+## Upcoming Features to Implement
 
-> Questa sezione verrà aggiornata con le nuove features che svilupperemo
+> This section will be updated with new features as we develop them
 
-### Priorità Alta
+### High Priority
 - [ ] TBD
 
-### Priorità Media
+### Medium Priority
 - [ ] TBD
 
-### Priorità Bassa
+### Low Priority
 - [ ] TBD
 
-## Linee Guida per lo Sviluppo
+## Development Guidelines
 
 ### Coding Standards
-- Python: Seguire PEP 8
-- Utilizzare async/await per operazioni I/O
-- Logging con il modulo logging standard
-- Test: pytest per unit testing
+- Python: Follow PEP 8
+- Use async/await for I/O operations
+- Logging with standard logging module
+- Testing: pytest for unit testing
 
 ### Best Practices
-1. Testare sempre in ambiente virtuale
-2. Non committare credenziali o API keys
-3. Documentare le modifiche in questo file
-4. Mantenere compatibilità con il core upstream quando possibile
-5. Utilizzare i servizi esistenti invece di duplicare logica
+1. Always test in virtual environment
+2. Never commit credentials or API keys
+3. Document changes in this file
+4. Maintain compatibility with upstream core when possible
+5. Use existing services instead of duplicating logic
 
 ### API Development
 - REST API: `app/api/rest_api.py`
-- Endpoints documentati con aiohttp-apispec
-- Autenticazione tramite API keys
+- Endpoints documented with aiohttp-apispec
+- Authentication via API keys
 
 ### Plugin Development
-- Ogni plugin è un submodule separato
-- Seguire la struttura del plugin Skeleton: https://github.com/mitre/skeleton
-- Registrazione in `conf/default.yml` sotto `plugins:`
+- Each plugin is a separate submodule
+- Follow Skeleton plugin structure: https://github.com/mitre/skeleton
+- Registration in `conf/default.yml` under `plugins:`
 
-## Risorse Utili
+## Useful Resources
 
-- **Documentazione ufficiale**: https://caldera.readthedocs.io
+- **Official Documentation**: https://caldera.readthedocs.io
 - **ATT&CK Framework**: https://attack.mitre.org
-- **Tutorial video**: https://www.youtube.com/playlist?list=PLF2bj1pw7-ZvLTjIwSaTXNLN2D2yx-wXH
-- **Repository upstream**: https://github.com/mitre/caldera
+- **Video Tutorials**: https://www.youtube.com/playlist?list=PLF2bj1pw7-ZvLTjIwSaTXNLN2D2yx-wXH
+- **Upstream Repository**: https://github.com/mitre/caldera
 
-## Architettura Tecnica Dettagliata
+## Detailed Technical Architecture
 
-### Flusso di Esecuzione
+### Execution Flow
 1. **Bootstrap** (`server.py`):
-   - Carica configurazione da `conf/default.yml`
-   - Inizializza servizi (data_svc, planning_svc, contact_svc, etc.)
-   - Registra plugin come submodules Git
-   - Avvia web application aiohttp
-   - Compila frontend Vue.js (Magma) se necessario
+   - Load configuration from `conf/default.yml`
+   - Initialize services (data_svc, planning_svc, contact_svc, etc.)
+   - Register plugins as Git submodules
+   - Start aiohttp web application
+   - Compile Vue.js frontend (Magma) if needed
 
-2. **Servizi Core** (`app/service/`):
-   - **app_svc**: Gestione lifecycle applicazione, plugin, scheduler
-   - **data_svc**: Persistenza oggetti in RAM e su disco (`object_store`)
-   - **planning_svc**: Generazione link, gestione buckets, esecuzione planner
-   - **contact_svc**: Gestione beacon agent e decodifica comunicazioni
-   - **knowledge_svc**: Knowledge base con fatti (facts) raccolti
-   - **auth_svc**: Autenticazione e gestione sessioni
+2. **Core Services** (`app/service/`):
+   - **app_svc**: Application lifecycle management, plugins, scheduler
+   - **data_svc**: Object persistence in RAM and disk (`object_store`)
+   - **planning_svc**: Link generation, bucket management, planner execution
+   - **contact_svc**: Agent beacon management and communication decoding
+   - **knowledge_svc**: Knowledge base with collected facts
+   - **auth_svc**: Authentication and session management
 
-3. **Oggetti Core** (`app/objects/`):
-   - **Agent**: Rappresenta endpoint compromesso con executors, paw, platform
-   - **Ability**: Singola tecnica ATT&CK con executors per piattaforme diverse
-   - **Adversary**: Collezione ordinata di abilities (atomic_ordering)
-   - **Operation**: Esecuzione di adversary su agents, gestisce chain di link
-   - **Planner**: Logica decisionale per ordinamento abilities
-   - **Link**: Istanza di ability pronta per esecuzione su agent specifico
+3. **Core Objects** (`app/objects/`):
+   - **Agent**: Represents compromised endpoint with executors, paw, platform
+   - **Ability**: Single ATT&CK technique with executors for different platforms
+   - **Adversary**: Ordered collection of abilities (atomic_ordering)
+   - **Operation**: Execution of adversary on agents, manages link chain
+   - **Planner**: Decision logic for ability ordering
+   - **Link**: Ability instance ready for execution on specific agent
 
-### Sistema dei Planners
-- **Buckets**: Stati della state machine (es: initial-access, privilege-escalation, collection)
-- **Atomic Planner**: Esegue abilities nell'ordine dell'adversary (atomic_ordering)
-- **Bucket Planner**: Esegue abilities per bucket ATT&CK in sequenza
-- `planning_svc.execute_planner()` loop: esegue bucket method → aggiorna `next_bucket` → ripete
-- `exhaust_bucket()`: Applica tutti i link di un bucket fino a completamento
+### Planner System
+- **Buckets**: State machine states (e.g., initial-access, privilege-escalation, collection)
+- **Atomic Planner**: Executes abilities in adversary order (atomic_ordering)
+- **Bucket Planner**: Executes abilities by ATT&CK bucket in sequence
+- `planning_svc.execute_planner()` loop: execute bucket method → update `next_bucket` → repeat
+- `exhaust_bucket()`: Apply all links from a bucket until completion
 
-### Canali C2 (`app/contacts/`)
-- **HTTP** (`contact_http.py`): Beacon POST su `/beacon` con heartbeat JSON
-- **DNS**: Query DNS con dati codificati
-- **TCP/UDP**: Socket raw per comunicazione binaria
-- **WebSocket**: Comunicazione bidirezionale real-time
-- Ogni contact decodifica beacon, chiama `contact_svc.handle_heartbeat()`, restituisce instructions
+### C2 Channels (`app/contacts/`)
+- **HTTP** (`contact_http.py`): Beacon POST to `/beacon` with JSON heartbeat
+- **DNS**: DNS queries with encoded data
+- **TCP/UDP**: Raw sockets for binary communication
+- **WebSocket**: Bidirectional real-time communication
+- Each contact decodes beacon, calls `contact_svc.handle_heartbeat()`, returns instructions
 
 ### Plugin System
-- **Sandcat** (`plugins/sandcat/`): Agent GoLang cross-platform, compilazione dinamica
-- **Stockpile** (`plugins/stockpile/`): Repository abilities YAML organizzate per tactic
-- **Magma** (`plugins/magma/`): Frontend Vue.js v5, compilato con Vite
-- **Manx**: Shell capabilities e reverse shell payloads
-- **Atomic**: Atomic Red Team TTPs integrati
+- **Sandcat** (`plugins/sandcat/`): Cross-platform GoLang agent, dynamic compilation
+- **Stockpile** (`plugins/stockpile/`): YAML abilities repository organized by tactic
+- **Magma** (`plugins/magma/`): Vue.js v5 frontend, compiled with Vite
+- **Manx**: Shell capabilities and reverse shell payloads
+- **Atomic**: Integrated Atomic Red Team TTPs
 
 ### Data Model
-- **Abilities**: File YAML in `plugins/*/data/abilities/[tactic]/[uuid].yml`
-  - Contengono: id, name, tactic, technique_id, executors (platform-specific)
-  - Parsers per estrarre facts dall'output
-- **Adversaries**: File YAML con atomic_ordering (lista di ability IDs)
-- **Facts**: Triple (trait, value, score) raccolte durante operations
-- **Sources**: Seed facts iniziali per operations
+- **Abilities**: YAML files in `plugins/*/data/abilities/[tactic]/[uuid].yml`
+  - Contain: id, name, tactic, technique_id, executors (platform-specific)
+  - Parsers to extract facts from output
+- **Adversaries**: YAML files with atomic_ordering (list of ability IDs)
+- **Facts**: Triples (trait, value, score) collected during operations
+- **Sources**: Initial seed facts for operations
 
 ### REST API
-- **v1** (`app/api/rest_api.py`): Endpoint `/api/rest` con routing basato su index
+- **v1** (`app/api/rest_api.py`): `/api/rest` endpoint with index-based routing
   - GET: display_objects, POST: updates, PUT: create, DELETE: remove
-- **v2** (`app/api/v2/`): API RESTful moderna con OpenAPI docs su `/api/docs`
-- Autenticazione: API keys (red/blue) in headers o cookie-based sessions
+- **v2** (`app/api/v2/`): Modern RESTful API with OpenAPI docs at `/api/docs`
+- Authentication: API keys (red/blue) in headers or cookie-based sessions
 
-## Note per GitHub Copilot
+## Notes for GitHub Copilot
 
-Quando lavori su questo progetto:
-- **Modello asincrono**: Tutto usa async/await con asyncio e aiohttp
-- **Agents** = endpoint compromessi (beacons) con executors (sh, psh, cmd)
-- **Abilities** = singole tecniche ATT&CK, multi-platform con parsers
-- **Adversaries** = profili APT con sequenza ordinata di abilities
-- **Operations** = esecuzioni live: adversary + agents + planner + facts
-- **Planners** = AI decisionale (atomic order, buckets, ML-based)
-- **Links** = abilities istanziate per agent specifico (in chain o potential_links)
-- **Buckets** = raggruppamenti logici abilities (tactic o custom)
-- **Facts** = conoscenza dinamica raccolta (es: host.user.name = "admin")
-- Schema marshmallow per serializzazione/validazione
+When working on this project:
+- **Async model**: Everything uses async/await with asyncio and aiohttp
+- **Agents** = compromised endpoints (beacons) with executors (sh, psh, cmd)
+- **Abilities** = single ATT&CK techniques, multi-platform with parsers
+- **Adversaries** = APT profiles with ordered sequence of abilities
+- **Operations** = live executions: adversary + agents + planner + facts
+- **Planners** = decision AI (atomic order, buckets, ML-based)
+- **Links** = abilities instantiated for specific agent (in chain or potential_links)
+- **Buckets** = logical ability groupings (tactic or custom)
+- **Facts** = dynamic knowledge collected (e.g., host.user.name = "admin")
+- Marshmallow schemas for serialization/validation
 - RAM storage (`data_svc.ram`) + pickle persistence (`data/object_store`)
