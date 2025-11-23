@@ -140,6 +140,27 @@ async def enable_cors(request, response):
     )
 
 
+@web.middleware
+async def cors_middleware(request, handler):
+    """Global CORS middleware for cross-origin requests from web clients"""
+    if not BaseWorld.get_config("cors", {}).get("enabled", False):
+        return await handler(request)
+    
+    if request.method == "OPTIONS":
+        response = web.Response()
+    else:
+        response = await handler(request)
+    
+    allowed_origins = BaseWorld.get_config("cors", {}).get("allowed_origins", "*")
+    response.headers["Access-Control-Allow-Origin"] = allowed_origins
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, KEY, Authorization, X-Requested-With"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    
+    return response
+
+
 async def start_vue_dev_server():
     await asyncio.create_subprocess_shell(
         "npm run dev", stdout=sys.stdout, stderr=sys.stderr, cwd=MAGMA_PATH
@@ -248,7 +269,7 @@ if __name__ == "__main__":
 
     app_svc = AppService(
         application=web.Application(
-            client_max_size=5120**2, middlewares=[pass_option_middleware]
+            client_max_size=5120**2, middlewares=[cors_middleware, pass_option_middleware]
         )
     )
     app_svc.register_subapp("/api/v2", app.api.v2.make_app(app_svc.get_services()))

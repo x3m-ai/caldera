@@ -46,8 +46,15 @@ All plugins are managed as Git submodules in `plugins/`:
 # Activate virtual environment
 source .calderavenv/bin/activate
 
-# Start server (insecure mode for development)
-python3 server.py --insecure
+# Start server in background (recommended for development)
+# This allows you to continue working in the terminal
+nohup python3 server.py --insecure > caldera.log 2>&1 &
+
+# Monitor server logs in real-time
+tail -f caldera.log
+
+# Stop the server when needed
+pkill -f "python3 server.py"
 
 # Web UI access
 http://localhost:8888
@@ -66,6 +73,22 @@ http://localhost:8888
 - ✅ Installed Node.js 20.x to compile Magma UI
 - ✅ Compiled Vue.js frontend (plugins/magma/dist)
 - ✅ Server running on port 8888
+
+### [Date: 2025-11-23] - CORS Support for Web Clients
+- ✅ Implemented global CORS middleware for cross-origin requests
+- ✅ Added CORS configuration to `conf/default.yml` (enabled flag and allowed_origins)
+- ✅ Configured middleware to handle OPTIONS preflight requests automatically
+- ✅ Tested with curl: verified CORS headers on both OPTIONS and GET requests
+- **Purpose**: Enable direct API access from Merlino Excel Add-in (https://merlino-addin.x3m.ai)
+- **Impact**: Eliminates need for Python proxy server (port 8889 workaround)
+- **Configuration**:
+  ```yaml
+  cors:
+    enabled: true
+    allowed_origins: "*"  # Safe for local network VM deployment
+  ```
+- **Headers Applied**: Access-Control-Allow-Origin, Allow-Methods, Allow-Headers, Allow-Credentials, Max-Age
+- **Authentication**: Caldera API key passed via `KEY` header (e.g., `KEY: ADMIN123`)
 
 ### Technical Notes
 - **Go not installed**: Some GoLang agent dynamic compilation features unavailable
