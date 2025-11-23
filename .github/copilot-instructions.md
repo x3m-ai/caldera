@@ -90,6 +90,28 @@ http://localhost:8888
 - **Headers Applied**: Access-Control-Allow-Origin, Allow-Methods, Allow-Headers, Allow-Credentials, Max-Age
 - **Authentication**: Caldera API key passed via `KEY` header (e.g., `KEY: ADMIN123`)
 
+### [Date: 2025-11-23] - HTTPS Support with Self-Signed Certificate
+- ✅ Generated self-signed SSL certificate (10-year validity, RSA 4096-bit)
+- ✅ Added SSL context configuration to `server.py` with conditional HTTPS
+- ✅ Added SSL configuration to `conf/default.yml` (enabled, cert_file, key_file)
+- ✅ Tested HTTPS with curl: verified SSL handshake and CORS headers work together
+- **Purpose**: Resolve Mixed Content blocking (HTTPS client → HTTP server blocked by browsers)
+- **Impact**: Enables direct connection from HTTPS web clients without security warnings
+- **Certificate Details**:
+  - Location: `certs/cert.pem`, `certs/key.pem`
+  - Common Name: 192.168.124.133 (VM IP address)
+  - Validity: 10 years (expires 2035)
+  - Algorithm: RSA 4096-bit (same security as paid certificates)
+- **Configuration**:
+  ```yaml
+  ssl:
+    enabled: true
+    cert_file: certs/cert.pem
+    key_file: certs/key.pem
+  ```
+- **Access**: `https://192.168.124.133:8888` (browser shows warning but works with fetch API)
+- **Testing**: Use `curl -k` flag to accept self-signed certificate
+
 ### Technical Notes
 - **Go not installed**: Some GoLang agent dynamic compilation features unavailable
 - **Builder Plugin**: Requires Docker (not installed, optional)

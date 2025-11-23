@@ -5,6 +5,7 @@ import os
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.theme import Theme
+import ssl
 import sys
 import warnings
 import subprocess
@@ -67,8 +68,20 @@ async def start_server():
     await auth_svc.apply(app_svc.application, BaseWorld.get_config("users"))
     runner = web.AppRunner(app_svc.application)
     await runner.setup()
+    
+    # Create SSL context if HTTPS is enabled
+    ssl_context = None
+    if BaseWorld.get_config("ssl", {}).get("enabled", False):
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context.check_hostname = False  # Required for self-signed certificates
+        ssl_context.verify_mode = ssl.CERT_NONE  # Required for self-signed certificates
+        cert_file = BaseWorld.get_config("ssl", {}).get("cert_file", "certs/cert.pem")
+        key_file = BaseWorld.get_config("ssl", {}).get("key_file", "certs/key.pem")
+        ssl_context.load_cert_chain(certfile=cert_file, keyfile=key_file)
+        logging.info(f"HTTPS enabled with certificate: {cert_file}")
+    
     await web.TCPSite(
-        runner, BaseWorld.get_config("host"), BaseWorld.get_config("port")
+        runner, BaseWorld.get_config("host"), BaseWorld.get_config("port"), ssl_context=ssl_context
     ).start()
 
 

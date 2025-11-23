@@ -26,6 +26,10 @@ auth.login.handler.module: default
 cors:
   enabled: true
   allowed_origins: "*"
+ssl:
+  enabled: true
+  cert_file: certs/cert.pem
+  key_file: certs/key.pem
 crypt_salt: REPLACE_WITH_RANDOM_VALUE
 encryption_key: ADMIN123
 exfil_dir: /tmp/caldera
