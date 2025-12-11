@@ -166,11 +166,16 @@ ensure_caldera_running() {
 }
 
 install_dependencies() {
-    log_info "Installing system dependencies..."
+    log_info "Installing system dependencies (this may take a few minutes)..."
+    echo ""
     
     export DEBIAN_FRONTEND=noninteractive
-    apt-get update -qq
-    apt-get install -y -qq \
+    
+    log_info "Updating package lists..."
+    apt-get update
+    
+    log_info "Installing packages: Python3, Nginx, Git, OpenSSL, UFW..."
+    apt-get install -y \
         python3 \
         python3-pip \
         python3-venv \
@@ -179,9 +184,9 @@ install_dependencies() {
         git \
         curl \
         ufw \
-        net-tools \
-        >/dev/null 2>&1
+        net-tools
     
+    echo ""
     log_success "System dependencies installed"
 }
 
@@ -199,13 +204,16 @@ clone_or_update_caldera() {
     if [ -d "$CALDERA_DIR" ]; then
         log_info "Caldera directory exists, updating..."
         cd "$CALDERA_DIR"
-        sudo -u "$CALDERA_USER" git pull origin "$BRANCH" >/dev/null 2>&1 || true
-        sudo -u "$CALDERA_USER" git submodule update --init --recursive >/dev/null 2>&1 || true
+        sudo -u "$CALDERA_USER" git pull origin "$BRANCH" || true
+        log_info "Updating submodules (plugins)..."
+        sudo -u "$CALDERA_USER" git submodule update --init --recursive || true
     else
-        log_info "Cloning Caldera repository..."
-        git clone --quiet --recursive https://github.com/x3m-ai/caldera.git "$CALDERA_DIR"
+        log_info "Cloning Caldera repository with all plugins..."
+        echo ""
+        git clone --recursive --progress https://github.com/x3m-ai/caldera.git "$CALDERA_DIR"
         chown -R "$CALDERA_USER":"$CALDERA_USER" "$CALDERA_DIR"
     fi
+    echo ""
     log_success "Caldera repository ready"
 }
 
@@ -216,11 +224,14 @@ setup_python_environment() {
     
     if [ ! -d "venv" ]; then
         sudo -u "$CALDERA_USER" python3 -m venv venv
+        log_success "Virtual environment created"
     fi
     
-    log_info "Installing Python dependencies (this may take a few minutes)..."
-    sudo -u "$CALDERA_USER" bash -c "source venv/bin/activate && pip install --quiet --upgrade pip && pip install --quiet -r requirements.txt"
+    log_info "Installing Python dependencies (this may take 3-5 minutes)..."
+    echo ""
+    sudo -u "$CALDERA_USER" bash -c "source venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
     
+    echo ""
     log_success "Python environment configured"
 }
 
@@ -233,19 +244,18 @@ setup_nginx() {
     
     # Generate SSL certificate if not exists
     if [ ! -f "/etc/nginx/ssl/caldera.crt" ]; then
-        log_info "Generating SSL certificate (valid for 10 years)..."
+        log_info "Generating 4096-bit RSA SSL certificate (valid for 10 years)..."
         openssl req -x509 -nodes -days 3650 -newkey rsa:4096 \
             -keyout /etc/nginx/ssl/caldera.key \
             -out /etc/nginx/ssl/caldera.crt \
             -subj "/C=IT/ST=State/L=City/O=X3M-AI/OU=Merlino/CN=$SERVER_IP" \
-            -addext "subjectAltName=IP:$SERVER_IP" \
-            >/dev/null 2>&1
+            -addext "subjectAltName=IP:$SERVER_IP"
         
         chmod 644 /etc/nginx/ssl/caldera.crt
         chmod 600 /etc/nginx/ssl/caldera.key
-        log_success "SSL certificate generated (expires in 10 years)"
+        log_success "SSL certificate generated: /etc/nginx/ssl/caldera.crt"
     else
-        log_info "SSL certificate already exists"
+        log_info "SSL certificate already exists at /etc/nginx/ssl/caldera.crt"
     fi
     
     # Create Nginx configuration
