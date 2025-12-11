@@ -3,18 +3,26 @@
 # Caldera + Nginx Automatic Deployment Script
 # For Merlino Excel Add-in Integration
 #
+# Version: 1.1.0
+# Last Updated: 2025-12-11
+#
 # SMART MODE:
 #   - Fresh install: Installs everything (Caldera + Nginx + auto-start)
 #   - Existing install: Checks/starts Nginx and Caldera
 #   - Always: Configures systemd for auto-start on boot
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/x3m-ai/caldera/master/deploy.sh | sudo bash
+#   curl -sSL https://raw.githubusercontent.com/x3m-ai/caldera/master/start-caldera.sh | sudo bash
 #   OR
-#   sudo bash deploy.sh --ip 192.168.1.100
+#   wget -qO- https://raw.githubusercontent.com/x3m-ai/caldera/master/start-caldera.sh | sudo bash
+#   OR
+#   sudo bash start-caldera.sh --ip 192.168.1.100
 ################################################################################
 
 set -e  # Exit on error
+
+# Script version
+SCRIPT_VERSION="1.1.0"
 
 # Detect if this is a fresh install or existing installation
 EXISTING_INSTALL=false
@@ -55,6 +63,8 @@ print_banner() {
     echo "║                                                              ║"
     echo "║        CALDERA + NGINX AUTOMATIC DEPLOYMENT                 ║"
     echo "║        For Merlino Excel Add-in Integration                 ║"
+    echo "║                                                              ║"
+    echo "║        Version: ${SCRIPT_VERSION}                                  ║"
     echo "║                                                              ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
