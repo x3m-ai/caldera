@@ -20,9 +20,10 @@
 ################################################################################
 
 set -e  # Exit on error
+set -x  # Print commands (verbose debug mode for sysadmin)
 
 # Script version
-SCRIPT_VERSION="1.1.0"
+SCRIPT_VERSION="1.2.0"
 
 # Detect if this is a fresh install or existing installation
 EXISTING_INSTALL=false
@@ -93,6 +94,22 @@ check_root() {
     fi
 }
 
+check_apt_lock() {
+    if fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; then
+        log_warning "APT is locked by another process. Waiting..."
+        local i=0
+        while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+            sleep 1
+            i=$((i + 1))
+            if [ $i -gt 60 ]; then
+                log_error "APT still locked after 60 seconds. Please kill other apt processes and retry."
+                exit 1
+            fi
+        done
+        log_info "APT lock released, continuing..."
+    fi
+}
+
 detect_ip() {
     if [ "$AUTO_DETECT_IP" = true ]; then
         # Try to detect primary IP
@@ -138,8 +155,9 @@ ensure_nginx_running() {
     
     # Ensure Nginx is enabled for auto-start
     if ! systemctl is-enabled --quiet nginx; then
-        systemctl enable nginx >/dev/null 2>&1
-        log_info "Enabled Nginx auto-start on boot"
+        log_info "Enabling Nginx auto-start on boot..."
+        systemctl enable nginx
+        log_success "Nginx auto-start enabled"
     fi
     
     return 0
@@ -168,8 +186,9 @@ ensure_caldera_running() {
     
     # Ensure Caldera is enabled for auto-start
     if ! systemctl is-enabled --quiet ${service_name}; then
-        systemctl enable ${service_name} >/dev/null 2>&1
-        log_info "Enabled Caldera auto-start on boot"
+        log_info "Enabling Caldera auto-start on boot..."
+        systemctl enable ${service_name}
+        log_success "Caldera auto-start enabled"
     fi
     
     return 0
@@ -179,13 +198,19 @@ install_dependencies() {
     log_info "Installing system dependencies (this may take a few minutes)..."
     echo ""
     
+    check_apt_lock
+    
     export DEBIAN_FRONTEND=noninteractive
     
     log_info "Updating package lists..."
-    apt-get update
+    if ! apt-get update; then
+        log_error "Failed to update package lists"
+        return 1
+    fi
     
     log_info "Installing packages: Python3, Nginx, Git, OpenSSL, UFW..."
-    apt-get install -y \
+    echo "   This step may take 2-5 minutes depending on your connection..."
+    if ! apt-get install -y \
         python3 \
         python3-pip \
         python3-venv \
@@ -194,7 +219,10 @@ install_dependencies() {
         git \
         curl \
         ufw \
-        net-tools
+        net-tools; then
+        log_error "Failed to install system packages"
+        return 1
+    fi
     
     echo ""
     log_success "System dependencies installed"
@@ -352,7 +380,8 @@ EOF
     fi
     
     # Test configuration
-    nginx -t >/dev/null 2>&1
+    log_info "Testing Nginx configuration..."
+    nginx -t
     
     log_success "Nginx configured"
 }
@@ -393,14 +422,25 @@ EOF
 }
 
 configure_firewall() {
-    log_info "Configuring firewall..."
+    log_info "Configuring UFW firewall..."
     
     # Check if UFW is installed and active
     if command -v ufw &> /dev/null; then
-        ufw --force enable >/dev/null 2>&1
-        ufw allow $NGINX_PORT/tcp comment 'Nginx HTTPS for Caldera' >/dev/null 2>&1
-        ufw allow 80/tcp comment 'Nginx HTTP redirect' >/dev/null 2>&1
-        ufw allow ssh >/dev/null 2>&1
+        log_info "Enabling UFW..."
+        ufw --force enable
+        
+        log_info "Opening port $NGINX_PORT (HTTPS)..."
+        ufw allow $NGINX_PORT/tcp comment 'Nginx HTTPS for Caldera'
+        
+        log_info "Opening port 80 (HTTP redirect)..."
+        ufw allow 80/tcp comment 'Nginx HTTP redirect'
+        
+        log_info "Ensuring SSH is allowed..."
+        ufw allow ssh
+        
+        log_info "Current firewall status:"
+        ufw status verbose
+        
         log_success "Firewall configured"
     else
         log_warning "UFW not available, skipping firewall configuration"
@@ -416,12 +456,16 @@ start_services() {
     fi
     
     # Start and enable Nginx
+    log_info "Starting Nginx..."
     systemctl restart nginx
-    systemctl enable nginx >/dev/null 2>&1
+    log_info "Enabling Nginx auto-start..."
+    systemctl enable nginx
     
     # Start and enable Caldera
+    log_info "Starting Caldera..."
     systemctl restart ${service_name}
-    systemctl enable ${service_name} >/dev/null 2>&1
+    log_info "Enabling Caldera auto-start..."
+    systemctl enable ${service_name}
     
     # Wait for services to start
     sleep 3
@@ -624,6 +668,7 @@ main() {
     done
     
     check_root
+    check_apt_lock
     detect_ip
     
     # Check if this is an existing installation
