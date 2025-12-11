@@ -115,9 +115,10 @@ clone_or_update_caldera() {
         log_info "Caldera directory exists, updating..."
         cd "$CALDERA_DIR"
         sudo -u "$CALDERA_USER" git pull origin "$BRANCH" >/dev/null 2>&1 || true
+        sudo -u "$CALDERA_USER" git submodule update --init --recursive >/dev/null 2>&1 || true
     else
         log_info "Cloning Caldera repository..."
-        git clone --quiet https://github.com/x3m-ai/caldera.git "$CALDERA_DIR"
+        git clone --quiet --recursive https://github.com/x3m-ai/caldera.git "$CALDERA_DIR"
         chown -R "$CALDERA_USER":"$CALDERA_USER" "$CALDERA_DIR"
     fi
     log_success "Caldera repository ready"
