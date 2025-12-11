@@ -1,0 +1,13 @@
+name: Regsvr32 Rundll32 Image Loads Abnormal Extension
+description: 'This query is looking for regsvr32.exe or rundll32.exe loading DLL images
+  with other extensions than .dll.
+
+  Joins the data to public network events.
+
+  References:
+
+  https://threathunt.blog/running-live-malware-for-threat-hunting-purposes/ (Generated
+  by Merlino)'
+objective: 495a9828-cab1-44dd-a0ca-66e58177d8cc
+atomic_ordering: []
+adversary_id: 4679d1b6-5cfe-46df-bd8f-43aeb18ce9ec

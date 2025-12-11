@@ -1,0 +1,13 @@
+name: SUNBURST and SUPERNOVA backdoor hashes
+description: 'Identifies SolarWinds SUNBURST and SUPERNOVA backdoor file hash IOCs
+  in DeviceFileEvents
+
+  References:
+
+  - https://www.fireeye.com/blog/threat-research/2020/12/evasive-attacker-leverages-solarwinds-supply-chain-compromises-with-sunburst-backdoor.html
+
+  - https://gist.github.com/olafhartong/71ffdd4cab4b6acd5cbcd1a0691ff82f (Generated
+  by Merlino)'
+objective: 495a9828-cab1-44dd-a0ca-66e58177d8cc
+atomic_ordering: []
+adversary_id: c9ce478e-130a-41d3-9a17-3d463dce77df

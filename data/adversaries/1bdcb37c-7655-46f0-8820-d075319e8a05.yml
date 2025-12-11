@@ -1,0 +1,13 @@
+name: TEARDROP memory-only dropper
+description: 'Identifies SolarWinds TEARDROP memory-only dropper IOCs in Window''s
+  defender Exploit Guard activity
+
+  References:
+
+  - https://www.fireeye.com/blog/threat-research/2020/12/evasive-attacker-leverages-solarwinds-supply-chain-compromises-with-sunburst-backdoor.html
+
+  - https://gist.github.com/olafhartong/71ffdd4cab4b6acd5cbcd1a0691ff82f (Generated
+  by Merlino)'
+objective: 495a9828-cab1-44dd-a0ca-66e58177d8cc
+atomic_ordering: []
+adversary_id: 1bdcb37c-7655-46f0-8820-d075319e8a05

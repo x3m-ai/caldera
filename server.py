@@ -35,6 +35,7 @@ from app.service.rest_svc import RestService
 from app.utility.base_object import AppConfigGlobalVariableIdentifier
 from app.utility.base_world import BaseWorld
 from app.utility.config_generator import ensure_local_config
+from app.utility.nginx_manager import NginxManager
 
 
 MAGMA_PATH = "./plugins/magma"
@@ -74,6 +75,18 @@ async def start_server():
 
 def run_tasks(services, run_vue_server=False):
     loop = asyncio.get_event_loop()
+    
+    # Setup Nginx reverse proxy for Merlino integration
+    nginx_mgr = NginxManager(
+        caldera_ip=BaseWorld.get_config("host"),
+        caldera_port=BaseWorld.get_config("port")
+    )
+    try:
+        nginx_mgr.ensure_running()
+    except Exception as e:
+        logging.warning(f"[yellow]Nginx setup skipped: {e}[/yellow]")
+        logging.warning("[yellow]Merlino integration will require manual Nginx configuration[/yellow]")
+    
     loop.create_task(app_svc.validate_requirements())
     loop.run_until_complete(data_svc.restore_state())
     loop.run_until_complete(knowledge_svc.restore_state())

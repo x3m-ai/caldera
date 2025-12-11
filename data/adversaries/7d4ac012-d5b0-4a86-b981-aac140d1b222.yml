@@ -1,0 +1,11 @@
+name: AD FS Remote HTTP Network Connection
+description: "This detection uses Sysmon events (NetworkConnect events) to detect\
+  \ incoming network traffic on port 80 on AD FS servers. This could be a sign of\
+  \ a threat actor trying to use replication services on the AD FS server to get its\
+  \ configuration settings and extract sensitive information such as AD FS certificates.\n\
+  In order to use this query you need to enable Sysmon telemetry on the AD FS Server.\n\
+  Reference: https://twitter.com/OTR_Community/status/1387038995016732672\n (Generated\
+  \ by Merlino)"
+objective: 495a9828-cab1-44dd-a0ca-66e58177d8cc
+atomic_ordering: []
+adversary_id: 7d4ac012-d5b0-4a86-b981-aac140d1b222

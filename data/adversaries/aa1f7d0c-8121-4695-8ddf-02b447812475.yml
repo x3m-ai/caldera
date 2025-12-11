@@ -1,0 +1,8 @@
+name: LaZagne Credential Theft
+description: LaZagne is a popular open-source tool used to recover passwords stored
+  on a local computer. It has been used in ransomware attacks to steal credentials
+  and escalate privileges. This query looks for the execution of LaZagne. (Generated
+  by Merlino)
+objective: 495a9828-cab1-44dd-a0ca-66e58177d8cc
+atomic_ordering: []
+adversary_id: aa1f7d0c-8121-4695-8ddf-02b447812475
