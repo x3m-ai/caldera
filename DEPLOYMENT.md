@@ -5,7 +5,7 @@
 Deploy Caldera + Nginx on a fresh Ubuntu server with a single command:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/x3m-ai/caldera/master/deploy.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/x3m-ai/caldera/master/start-caldera.sh | sudo bash
 ```
 
 **That's it!** Caldera will be running with:
@@ -51,23 +51,23 @@ git clone https://github.com/x3m-ai/caldera.git
 cd caldera
 
 # Run deployment script
-sudo bash deploy.sh
+sudo bash start-caldera.sh
 ```
 
 ### Custom Options
 
 ```bash
 # Specify server IP manually
-sudo bash deploy.sh --ip 192.168.1.100
+sudo bash start-caldera.sh --ip 192.168.1.100
 
 # Use custom user
-sudo bash deploy.sh --user mycaldera
+sudo bash start-caldera.sh --user mycaldera
 
 # Custom installation directory
-sudo bash deploy.sh --dir /home/caldera
+sudo bash start-caldera.sh --dir /home/caldera
 
 # Specific branch
-sudo bash deploy.sh --branch develop
+sudo bash start-caldera.sh --branch develop
 ```
 
 ---
