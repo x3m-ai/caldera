@@ -3,6 +3,11 @@
 # Caldera + Nginx Automatic Deployment Script
 # For Merlino Excel Add-in Integration
 #
+# SMART MODE:
+#   - Fresh install: Installs everything (Caldera + Nginx + auto-start)
+#   - Existing install: Checks/starts Nginx and Caldera
+#   - Always: Configures systemd for auto-start on boot
+#
 # Usage:
 #   curl -sSL https://raw.githubusercontent.com/x3m-ai/caldera/master/deploy.sh | sudo bash
 #   OR
@@ -10,6 +15,9 @@
 ################################################################################
 
 set -e  # Exit on error
+
+# Detect if this is a fresh install or existing installation
+EXISTING_INSTALL=false
 
 # Colors
 RED='\033[0;31m'
@@ -20,8 +28,16 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default configuration
-CALDERA_USER="${CALDERA_USER:-caldera}"
-CALDERA_DIR="/opt/caldera"
+# Auto-detect current user if Caldera already exists
+if [ -d "/home/morgana/caldera" ]; then
+    DETECTED_USER=$(stat -c '%U' /home/morgana/caldera 2>/dev/null || echo "morgana")
+    CALDERA_USER="${CALDERA_USER:-$DETECTED_USER}"
+    CALDERA_DIR="${CALDERA_DIR:-/home/morgana/caldera}"
+else
+    CALDERA_USER="${CALDERA_USER:-caldera}"
+    CALDERA_DIR="${CALDERA_DIR:-/opt/caldera}"
+fi
+
 CALDERA_PORT="8888"
 NGINX_PORT="443"
 SERVER_IP=""
@@ -78,6 +94,75 @@ detect_ip() {
             log_info "Detected server IP: ${GREEN}$SERVER_IP${NC}"
         fi
     fi
+}
+
+check_existing_installation() {
+    if [ -d "$CALDERA_DIR" ] && [ -f "$CALDERA_DIR/server.py" ]; then
+        EXISTING_INSTALL=true
+        log_info "${GREEN}Existing Caldera installation detected${NC}"
+        return 0
+    else
+        EXISTING_INSTALL=false
+        log_info "Fresh installation - will install everything"
+        return 1
+    fi
+}
+
+ensure_nginx_running() {
+    log_info "Checking Nginx status..."
+    
+    if ! systemctl is-active --quiet nginx; then
+        log_warning "Nginx is not running, starting it..."
+        systemctl start nginx
+        sleep 2
+        
+        if systemctl is-active --quiet nginx; then
+            log_success "Nginx started successfully"
+        else
+            log_error "Failed to start Nginx"
+            return 1
+        fi
+    else
+        log_success "Nginx is already running"
+    fi
+    
+    # Ensure Nginx is enabled for auto-start
+    if ! systemctl is-enabled --quiet nginx; then
+        systemctl enable nginx >/dev/null 2>&1
+        log_info "Enabled Nginx auto-start on boot"
+    fi
+    
+    return 0
+}
+
+ensure_caldera_running() {
+    log_info "Checking Caldera status..."
+    
+    local service_name="caldera"
+    
+    if ! systemctl is-active --quiet ${service_name}; then
+        log_warning "Caldera is not running, starting it..."
+        systemctl start ${service_name}
+        sleep 5
+        
+        if systemctl is-active --quiet ${service_name}; then
+            log_success "Caldera started successfully"
+        else
+            log_error "Failed to start Caldera"
+            log_info "Check logs with: journalctl -u ${service_name} -n 50"
+            return 1
+        fi
+    else
+        log_success "Caldera is already running"
+    fi
+    
+    # Ensure Caldera is enabled for auto-start
+    if ! systemctl is-enabled --quiet ${service_name}; then
+        systemctl enable ${service_name} >/dev/null 2>&1
+        log_info "Enabled Caldera auto-start on boot"
+    fi
+    
+    return 0
 }
 
 install_dependencies() {
@@ -373,6 +458,8 @@ print_completion_info() {
     echo -e "${GREEN}║                                                              ║${NC}"
     if [ "$TEST_MODE" = true ]; then
         echo -e "${GREEN}║           TEST DEPLOYMENT COMPLETED SUCCESSFULLY!            ║${NC}"
+    elif [ "$EXISTING_INSTALL" = true ]; then
+        echo -e "${GREEN}║           CALDERA IS NOW RUNNING SUCCESSFULLY!               ║${NC}"
     else
         echo -e "${GREEN}║              DEPLOYMENT COMPLETED SUCCESSFULLY!              ║${NC}"
     fi
@@ -385,38 +472,76 @@ print_completion_info() {
         echo ""
     fi
     
-    echo -e "${CYAN}📍 Server Information:${NC}"
-    echo -e "   IP Address:    ${GREEN}$SERVER_IP${NC}"
-    echo -e "   Caldera:       ${GREEN}http://127.0.0.1:$CALDERA_PORT${NC}"
-    echo -e "   Nginx Proxy:   ${GREEN}https://$SERVER_IP:$NGINX_PORT${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}📍 SERVER INFORMATION${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "   Server IP:         ${GREEN}$SERVER_IP${NC}"
+    echo -e "   Caldera Backend:   ${GREEN}http://127.0.0.1:$CALDERA_PORT${NC}"
+    echo -e "   Nginx Proxy:       ${GREEN}https://$SERVER_IP:$NGINX_PORT${NC}"
     echo ""
-    echo -e "${CYAN}🔐 SSL Certificate:${NC}"
-    echo -e "   Location:      ${GREEN}/etc/nginx/ssl/caldera.crt${NC}"
-    echo -e "   Export to Windows:"
-    echo -e "   ${YELLOW}scp root@$SERVER_IP:/etc/nginx/ssl/caldera.crt ~/caldera.crt${NC}"
+    
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}🔐 SSL CERTIFICATE - REQUIRED FOR MERLINO${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "   Certificate Location:"
+    echo -e "   ${GREEN}/etc/nginx/ssl/caldera.crt${NC}"
     echo ""
-    echo -e "${CYAN}🚀 Service Management:${NC}"
-    echo -e "   Status:        ${GREEN}systemctl status caldera${NC}"
-    echo -e "   Restart:       ${GREEN}systemctl restart caldera${NC}"
-    echo -e "   Logs:          ${GREEN}journalctl -u caldera -f${NC}"
-    echo -e "   Nginx logs:    ${GREEN}tail -f /var/log/nginx/caldera-access.log${NC}"
+    echo -e "   ${YELLOW}⚠️  IMPORTANT: Copy this certificate to your Windows client!${NC}"
     echo ""
-    echo -e "${CYAN}🧪 Testing:${NC}"
-    echo -e "   Health check:  ${GREEN}curl -k https://$SERVER_IP/nginx-health${NC}"
-    echo -e "   API test:      ${GREEN}curl -k https://$SERVER_IP/api/v2/agents -H 'KEY: red'${NC}"
+    echo -e "   Step 1: Export certificate from Linux server"
+    echo -e "   ${GREEN}scp root@$SERVER_IP:/etc/nginx/ssl/caldera.crt ~/Desktop/caldera.crt${NC}"
     echo ""
-    echo -e "${CYAN}🪟 Merlino Configuration:${NC}"
-    echo -e "   URL:           ${GREEN}https://$SERVER_IP${NC}"
-    echo -e "   Port:          ${GREEN}443${NC}"
-    echo -e "   API Key:       ${GREEN}red${NC} (or your configured key)"
+    echo -e "   Step 2: Install certificate on Windows"
+    echo -e "   - Double-click ${GREEN}caldera.crt${NC}"
+    echo -e "   - Click ${GREEN}\"Install Certificate\"${NC}"
+    echo -e "   - Select ${GREEN}\"Local Machine\"${NC}"
+    echo -e "   - Choose ${GREEN}\"Trusted Root Certification Authorities\"${NC}"
+    echo -e "   - Complete the wizard"
     echo ""
-    echo -e "${CYAN}🔄 Auto-start:${NC}"
-    echo -e "   ✓ Caldera will start automatically on system boot"
+    echo -e "   Step 3: Restart Excel after certificate installation"
+    echo ""
+    
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}🪟 MERLINO EXCEL ADD-IN CONFIGURATION${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "   Caldera URL:       ${GREEN}https://$SERVER_IP${NC}"
+    echo -e "   Port:              ${GREEN}443${NC} (HTTPS)"
+    echo -e "   API Key:           ${GREEN}ADMIN123${NC} (check conf/default.yml for your key)"
+    echo ""
+    echo -e "   Test connection from Windows:"
+    echo -e "   ${GREEN}Invoke-WebRequest -Uri \"https://$SERVER_IP/nginx-health\" -SkipCertificateCheck${NC}"
+    echo ""
+    
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}🔄 AUTO-START CONFIGURATION${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "   ✓ Nginx will start automatically on system boot"
+    echo -e "   ✓ Caldera will start automatically on system boot"
+    echo -e "   ✓ Caldera depends on Nginx (starts in correct order)"
+    echo ""
+    
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}🚀 SERVICE MANAGEMENT COMMANDS${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "   Check status:      ${GREEN}systemctl status caldera nginx${NC}"
+    echo -e "   Restart Caldera:   ${GREEN}systemctl restart caldera${NC}"
+    echo -e "   Restart Nginx:     ${GREEN}systemctl restart nginx${NC}"
+    echo -e "   View logs:         ${GREEN}journalctl -u caldera -f${NC}"
+    echo -e "   Nginx logs:        ${GREEN}tail -f /var/log/nginx/caldera-access.log${NC}"
+    echo ""
+    
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}🧪 TESTING ENDPOINTS${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "   Nginx health:      ${GREEN}curl -k https://$SERVER_IP/nginx-health${NC}"
+    echo -e "   Caldera API:       ${GREEN}curl -k https://$SERVER_IP/api/v2/agents -H 'KEY: ADMIN123'${NC}"
+    echo -e "   List abilities:    ${GREEN}curl -k https://$SERVER_IP/api/v2/abilities -H 'KEY: ADMIN123'${NC}"
     echo ""
     
     if [ "$TEST_MODE" = true ]; then
-        echo -e "${CYAN}🧹 Cleanup Test Installation:${NC}"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${CYAN}🧹 CLEANUP TEST INSTALLATION${NC}"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo -e "   ${YELLOW}sudo systemctl stop caldera-test${NC}"
         echo -e "   ${YELLOW}sudo systemctl disable caldera-test${NC}"
         echo -e "   ${YELLOW}sudo rm -rf $CALDERA_DIR${NC}"
@@ -426,6 +551,12 @@ print_completion_info() {
         echo -e "   ${YELLOW}sudo systemctl daemon-reload && sudo systemctl restart nginx${NC}"
         echo ""
     fi
+    
+    echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║  🎉 Ready to use with Merlino Excel Add-in!                 ║${NC}"
+    echo -e "${GREEN}║  📝 Don't forget to install the SSL certificate on Windows! ║${NC}"
+    echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
 }
 
 ################################################################################
@@ -475,34 +606,70 @@ main() {
     check_root
     detect_ip
     
+    # Check if this is an existing installation
+    check_existing_installation
+    
     echo ""
     log_info "Starting deployment with:"
     log_info "  Server IP:      $SERVER_IP"
     log_info "  Caldera User:   $CALDERA_USER"
     log_info "  Install Dir:    $CALDERA_DIR"
     log_info "  Git Branch:     $BRANCH"
+    log_info "  Mode:           $([ "$EXISTING_INSTALL" = true ] && echo "Update/Start existing" || echo "Fresh installation")"
     echo ""
     
-    install_dependencies
-    create_caldera_user
-    clone_or_update_caldera
-    setup_python_environment
-    setup_nginx
-    create_systemd_service
-    configure_firewall
-    start_services
-    
-    if verify_deployment; then
-        print_completion_info
-        exit 0
+    if [ "$EXISTING_INSTALL" = true ]; then
+        # Existing installation - just check and start services
+        log_info "${GREEN}Working with existing Caldera installation${NC}"
+        
+        # Ensure systemd service exists
+        if [ ! -f "/etc/systemd/system/caldera.service" ]; then
+            log_info "Systemd service not found, creating it..."
+            create_systemd_service
+        fi
+        
+        # Check and start services
+        ensure_nginx_running
+        ensure_caldera_running
+        
+        # Verify everything is working
+        if verify_deployment; then
+            print_completion_info
+            exit 0
+        else
+            log_error "Service startup completed with errors. Check logs for details."
+            echo ""
+            echo "Debug commands:"
+            echo "  systemctl status caldera"
+            echo "  systemctl status nginx"
+            echo "  journalctl -u caldera -n 50"
+            exit 1
+        fi
     else
-        log_error "Deployment completed with errors. Check logs for details."
-        echo ""
-        echo "Debug commands:"
-        echo "  systemctl status caldera"
-        echo "  systemctl status nginx"
-        echo "  journalctl -u caldera -n 50"
-        exit 1
+        # Fresh installation - install everything
+        log_info "${GREEN}Performing fresh installation${NC}"
+        
+        install_dependencies
+        create_caldera_user
+        clone_or_update_caldera
+        setup_python_environment
+        setup_nginx
+        create_systemd_service
+        configure_firewall
+        start_services
+        
+        if verify_deployment; then
+            print_completion_info
+            exit 0
+        else
+            log_error "Deployment completed with errors. Check logs for details."
+            echo ""
+            echo "Debug commands:"
+            echo "  systemctl status caldera"
+            echo "  systemctl status nginx"
+            echo "  journalctl -u caldera -n 50"
+            exit 1
+        fi
     fi
 }
 
