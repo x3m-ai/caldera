@@ -233,8 +233,8 @@ setup_nginx() {
     
     # Generate SSL certificate if not exists
     if [ ! -f "/etc/nginx/ssl/caldera.crt" ]; then
-        log_info "Generating SSL certificate..."
-        openssl req -x509 -nodes -days 365 -newkey rsa:4096 \
+        log_info "Generating SSL certificate (valid for 10 years)..."
+        openssl req -x509 -nodes -days 3650 -newkey rsa:4096 \
             -keyout /etc/nginx/ssl/caldera.key \
             -out /etc/nginx/ssl/caldera.crt \
             -subj "/C=IT/ST=State/L=City/O=X3M-AI/OU=Merlino/CN=$SERVER_IP" \
@@ -243,7 +243,7 @@ setup_nginx() {
         
         chmod 644 /etc/nginx/ssl/caldera.crt
         chmod 600 /etc/nginx/ssl/caldera.key
-        log_success "SSL certificate generated"
+        log_success "SSL certificate generated (expires in 10 years)"
     else
         log_info "SSL certificate already exists"
     fi

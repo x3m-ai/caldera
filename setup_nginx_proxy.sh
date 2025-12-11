@@ -57,8 +57,8 @@ if [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ]; then
     echo "Certificate already exists. Skipping generation."
     echo "To regenerate, delete files in $NGINX_SSL_DIR and run script again."
 else
-    echo "Generating self-signed certificate for $CALDERA_IP..."
-    openssl req -x509 -nodes -days 365 -newkey rsa:4096 \
+    echo "Generating self-signed certificate for $CALDERA_IP (valid for 10 years)..."
+    openssl req -x509 -nodes -days 3650 -newkey rsa:4096 \
         -keyout "$KEY_FILE" \
         -out "$CERT_FILE" \
         -subj "/C=IT/ST=State/L=City/O=X3M-AI/OU=Merlino/CN=$CALDERA_IP" \
@@ -66,7 +66,7 @@ else
     
     chmod 644 "$CERT_FILE"
     chmod 600 "$KEY_FILE"
-    echo -e "${GREEN}Certificate generated successfully${NC}"
+    echo -e "${GREEN}Certificate generated successfully (expires in 10 years)${NC}"
 fi
 
 echo ""

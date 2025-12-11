@@ -85,12 +85,12 @@ class NginxManager:
             self.logger.debug("SSL certificate already exists")
             return True
 
-        self.logger.info("Generating SSL certificate...")
+        self.logger.info("Generating SSL certificate (valid for 10 years)...")
         try:
             os.makedirs(self.SSL_DIR, exist_ok=True)
             subprocess.run(
                 [
-                    "openssl", "req", "-x509", "-nodes", "-days", "365",
+                    "openssl", "req", "-x509", "-nodes", "-days", "3650",
                     "-newkey", "rsa:4096",
                     "-keyout", self.SSL_KEY,
                     "-out", self.SSL_CERT,
@@ -102,7 +102,7 @@ class NginxManager:
             )
             os.chmod(self.SSL_CERT, 0o644)
             os.chmod(self.SSL_KEY, 0o600)
-            self.logger.info("✓ SSL certificate generated")
+            self.logger.info("✓ SSL certificate generated (expires in 10 years)")
             return True
         except subprocess.CalledProcessError as e:
             self.logger.error(f"Failed to generate SSL certificate: {e}")
