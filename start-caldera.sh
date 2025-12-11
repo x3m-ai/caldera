@@ -61,6 +61,7 @@ TEST_MODE=false
 ################################################################################
 
 print_banner() {
+    { set +x; } 2>/dev/null
     echo -e "${CYAN}"
     echo "╔══════════════════════════════════════════════════════════════╗"
     echo "║                                                              ║"
@@ -71,30 +72,41 @@ print_banner() {
     echo "║                                                              ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
+    set -x
 }
 
 log_info() {
+    { set +x; } 2>/dev/null
     echo -e "${CYAN}[INFO]${NC} $1"
+    set -x
 }
 
 log_success() {
+    { set +x; } 2>/dev/null
     echo -e "${GREEN}[✓]${NC} $1"
+    set -x
 }
 
 log_warning() {
+    { set +x; } 2>/dev/null
     echo -e "${YELLOW}[⚠]${NC} $1"
+    set -x
 }
 
 log_error() {
+    { set +x; } 2>/dev/null
     echo -e "${RED}[✗]${NC} $1"
+    set -x
 }
 
 log_step() {
+    { set +x; } 2>/dev/null
     echo ""
     echo -e "${BOLD}${CYAN}════════════════════════════════════════════════════════════════${NC}"
     echo -e "${BOLD}${CYAN}▶ $1${NC}"
     echo -e "${BOLD}${CYAN}════════════════════════════════════════════════════════════════${NC}"
     echo ""
+    set -x
 }
 
 check_root() {
