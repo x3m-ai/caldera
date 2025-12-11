@@ -153,7 +153,7 @@ check_existing_installation() {
     else
         EXISTING_INSTALL=false
         log_info "Fresh installation - will install everything"
-        return 1
+        return 0
     fi
 }
 
@@ -296,6 +296,46 @@ setup_python_environment() {
     
     echo ""
     log_success "Python environment configured"
+}
+
+setup_nodejs_and_build_frontend() {
+    log_step "STEP 3.5: Setting Up Node.js and Building Frontend"
+    
+    # Check if Node.js is installed
+    if ! command -v node &> /dev/null; then
+        log_info "Node.js not found, installing..."
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+        apt-get install -y nodejs
+        log_success "Node.js installed: $(node --version)"
+    else
+        log_info "Node.js already installed: $(node --version)"
+    fi
+    
+    # Build Magma plugin frontend
+    if [ -d "$CALDERA_DIR/plugins/magma" ]; then
+        log_info "Building Magma plugin frontend (this may take 2-3 minutes)..."
+        cd "$CALDERA_DIR/plugins/magma"
+        
+        # Check if dist/assets exists
+        if [ ! -d "dist/assets" ]; then
+            log_info "Installing npm dependencies..."
+            sudo -u "$CALDERA_USER" npm install --legacy-peer-deps
+            
+            log_info "Building Vue.js frontend..."
+            sudo -u "$CALDERA_USER" npm run build
+            
+            if [ -d "dist/assets" ]; then
+                log_success "Frontend built successfully"
+            else
+                log_error "Frontend build failed - dist/assets not created"
+                return 1
+            fi
+        else
+            log_info "Frontend already built (dist/assets exists)"
+        fi
+    else
+        log_warning "Magma plugin not found, skipping frontend build"
+    fi
 }
 
 setup_nginx() {
@@ -500,6 +540,49 @@ start_services() {
     sleep 3
     
     log_success "Services started"
+}
+
+build_magma_frontend() {
+    log_step "Building Magma Frontend (Vue.js)"
+    echo "════════════════════════════════════════════════════════════════"
+    echo "▶ Building Magma Frontend (Vue.js)"
+    echo "════════════════════════════════════════════════════════════════"
+    
+    # Check if dist already exists and is valid
+    if [ -d "$CALDERA_DIR/plugins/magma/dist" ] && [ -f "$CALDERA_DIR/plugins/magma/dist/index.html" ]; then
+        log_info "Frontend already built, skipping..."
+        return 0
+    fi
+    
+    log_info "Installing Node.js and npm..."
+    
+    # Install Node.js via NodeSource (latest LTS)
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+    apt-get install -y nodejs
+    
+    log_info "Node.js version: $(node --version)"
+    log_info "npm version: $(npm --version)"
+    
+    log_info "Building Magma frontend..."
+    cd "$CALDERA_DIR/plugins/magma"
+    
+    # Install dependencies
+    log_info "Installing npm dependencies..."
+    npm install --legacy-peer-deps
+    
+    # Build the frontend
+    log_info "Running npm build..."
+    npm run build
+    
+    # Verify build succeeded
+    if [ -d "$CALDERA_DIR/plugins/magma/dist" ] && [ -f "$CALDERA_DIR/plugins/magma/dist/index.html" ]; then
+        log_success "Magma frontend built successfully"
+    else
+        log_error "Frontend build failed - dist directory not created"
+        return 1
+    fi
+    
+    cd "$CALDERA_DIR"
 }
 
 verify_deployment() {
@@ -722,6 +805,12 @@ main() {
             create_systemd_service
         fi
         
+        # Check if frontend is built, if not build it
+        if [ ! -d "$CALDERA_DIR/plugins/magma/dist/assets" ]; then
+            log_warning "Frontend not built, building now..."
+            setup_nodejs_and_build_frontend
+        fi
+        
         # Check and start services
         ensure_nginx_running
         ensure_caldera_running
@@ -747,6 +836,7 @@ main() {
         create_caldera_user
         clone_or_update_caldera
         setup_python_environment
+        setup_nodejs_and_build_frontend
         setup_nginx
         create_systemd_service
         configure_firewall

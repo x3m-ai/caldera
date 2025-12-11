@@ -429,7 +429,13 @@ When reporting issues, provide:
 
 ## Version History
 
-### v1.2.0 (Current)
+### v1.3.0 (Current)
+- **Clean verbose output**: Colors defined before `set -x` to avoid escape sequences
+- **Step separators**: Clear visual separators for each deployment phase
+- **Better symbols**: ✓ for success, ⚠ for warnings, ✗ for errors
+- **Structured logging**: log_step() function for major phases
+
+### v1.2.0
 - Full verbose mode with `set -x`
 - Removed all output suppressions
 - APT lock detection and waiting
