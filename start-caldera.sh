@@ -3,7 +3,7 @@
 # Caldera + Nginx Automatic Deployment Script
 # For Merlino Excel Add-in Integration
 #
-# Version: 1.1.0
+# Version: 1.3.0
 # Last Updated: 2025-12-11
 #
 # SMART MODE:
@@ -19,22 +19,24 @@
 #   sudo bash start-caldera.sh --ip 192.168.1.100
 ################################################################################
 
-set -e  # Exit on error
-set -x  # Print commands (verbose debug mode for sysadmin)
-
-# Script version
-SCRIPT_VERSION="1.2.0"
-
-# Detect if this is a fresh install or existing installation
-EXISTING_INSTALL=false
-
-# Colors
+# Colors - defined BEFORE verbose mode to avoid showing escape sequences
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+BOLD='\033[1m'
+NC='\033[0m'
+
+# Enable verbose and error modes AFTER setting up colors
+set -e  # Exit on error
+set -x  # Print commands (verbose debug mode for sysadmin)
+
+# Script version
+SCRIPT_VERSION="1.3.0"
+
+# Detect if this is a fresh install or existing installation
+EXISTING_INSTALL=false
 
 # Default configuration
 # Auto-detect current user if Caldera already exists
@@ -80,11 +82,19 @@ log_success() {
 }
 
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    echo -e "${YELLOW}[⚠]${NC} $1"
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+log_step() {
+    echo ""
+    echo -e "${BOLD}${CYAN}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${BOLD}${CYAN}▶ $1${NC}"
+    echo -e "${BOLD}${CYAN}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
 }
 
 check_root() {
@@ -195,6 +205,7 @@ ensure_caldera_running() {
 }
 
 install_dependencies() {
+    log_step "STEP 1: Installing System Dependencies"
     log_info "Installing system dependencies (this may take a few minutes)..."
     echo ""
     
@@ -239,6 +250,7 @@ create_caldera_user() {
 }
 
 clone_or_update_caldera() {
+    log_step "STEP 2: Cloning/Updating Caldera Repository"
     if [ -d "$CALDERA_DIR" ]; then
         log_info "Caldera directory exists, updating..."
         cd "$CALDERA_DIR"
@@ -256,6 +268,7 @@ clone_or_update_caldera() {
 }
 
 setup_python_environment() {
+    log_step "STEP 3: Setting Up Python Environment"
     log_info "Setting up Python virtual environment..."
     
     cd "$CALDERA_DIR"
@@ -274,6 +287,7 @@ setup_python_environment() {
 }
 
 setup_nginx() {
+    log_step "STEP 4: Generating SSL Certificate and Configuring Nginx"
     log_info "Configuring Nginx reverse proxy..."
     
     # Create SSL directory
@@ -387,6 +401,7 @@ EOF
 }
 
 create_systemd_service() {
+    log_step "STEP 5: Creating Systemd Auto-Start Service"
     log_info "Creating systemd service for auto-start..."
     
     local service_name="caldera"
@@ -422,6 +437,7 @@ EOF
 }
 
 configure_firewall() {
+    log_step "STEP 6: Configuring Firewall Rules"
     log_info "Configuring UFW firewall..."
     
     # Check if UFW is installed and active
@@ -448,6 +464,7 @@ configure_firewall() {
 }
 
 start_services() {
+    log_step "STEP 7: Starting and Enabling Services"
     log_info "Starting services..."
     
     local service_name="caldera"
