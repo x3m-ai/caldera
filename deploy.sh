@@ -27,6 +27,7 @@ NGINX_PORT="443"
 SERVER_IP=""
 AUTO_DETECT_IP=true
 BRANCH="master"
+TEST_MODE=false
 
 ################################################################################
 # Functions
@@ -239,8 +240,10 @@ EOF
     # Enable site
     ln -sf /etc/nginx/sites-available/caldera-proxy /etc/nginx/sites-enabled/caldera-proxy
     
-    # Disable default site
-    rm -f /etc/nginx/sites-enabled/default
+    # Disable default site (only in production mode)
+    if [ "$TEST_MODE" = false ]; then
+        rm -f /etc/nginx/sites-enabled/default
+    fi
     
     # Test configuration
     nginx -t >/dev/null 2>&1
@@ -251,7 +254,12 @@ EOF
 create_systemd_service() {
     log_info "Creating systemd service for auto-start..."
     
-    cat > /etc/systemd/system/caldera.service << EOF
+    local service_name="caldera"
+    if [ "$TEST_MODE" = true ]; then
+        service_name="caldera-test"
+    fi
+    
+    cat > /etc/systemd/system/${service_name}.service << EOF
 [Unit]
 Description=Caldera C2 Framework
 After=network.target nginx.service
@@ -296,13 +304,18 @@ configure_firewall() {
 start_services() {
     log_info "Starting services..."
     
+    local service_name="caldera"
+    if [ "$TEST_MODE" = true ]; then
+        service_name="caldera-test"
+    fi
+    
     # Start and enable Nginx
     systemctl restart nginx
     systemctl enable nginx >/dev/null 2>&1
     
     # Start and enable Caldera
-    systemctl restart caldera
-    systemctl enable caldera >/dev/null 2>&1
+    systemctl restart ${service_name}
+    systemctl enable ${service_name} >/dev/null 2>&1
     
     # Wait for services to start
     sleep 3
@@ -314,6 +327,10 @@ verify_deployment() {
     log_info "Verifying deployment..."
     
     local errors=0
+    local service_name="caldera"
+    if [ "$TEST_MODE" = true ]; then
+        service_name="caldera-test"
+    fi
     
     # Check Nginx
     if systemctl is-active --quiet nginx; then
@@ -324,7 +341,7 @@ verify_deployment() {
     fi
     
     # Check Caldera
-    if systemctl is-active --quiet caldera; then
+    if systemctl is-active --quiet ${service_name}; then
         log_success "Caldera is running"
     else
         log_error "Caldera is not running"
@@ -353,10 +370,20 @@ print_completion_info() {
     echo ""
     echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║                                                              ║${NC}"
-    echo -e "${GREEN}║              DEPLOYMENT COMPLETED SUCCESSFULLY!              ║${NC}"
+    if [ "$TEST_MODE" = true ]; then
+        echo -e "${GREEN}║           TEST DEPLOYMENT COMPLETED SUCCESSFULLY!            ║${NC}"
+    else
+        echo -e "${GREEN}║              DEPLOYMENT COMPLETED SUCCESSFULLY!              ║${NC}"
+    fi
     echo -e "${GREEN}║                                                              ║${NC}"
     echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
+    
+    if [ "$TEST_MODE" = true ]; then
+        echo -e "${YELLOW}⚠️  This is a TEST installation - running alongside production${NC}"
+        echo ""
+    fi
+    
     echo -e "${CYAN}📍 Server Information:${NC}"
     echo -e "   IP Address:    ${GREEN}$SERVER_IP${NC}"
     echo -e "   Caldera:       ${GREEN}http://127.0.0.1:$CALDERA_PORT${NC}"
@@ -386,6 +413,18 @@ print_completion_info() {
     echo -e "   ✓ Caldera will start automatically on system boot"
     echo -e "   ✓ Nginx will start automatically on system boot"
     echo ""
+    
+    if [ "$TEST_MODE" = true ]; then
+        echo -e "${CYAN}🧹 Cleanup Test Installation:${NC}"
+        echo -e "   ${YELLOW}sudo systemctl stop caldera-test${NC}"
+        echo -e "   ${YELLOW}sudo systemctl disable caldera-test${NC}"
+        echo -e "   ${YELLOW}sudo rm -rf $CALDERA_DIR${NC}"
+        echo -e "   ${YELLOW}sudo rm /etc/systemd/system/caldera-test.service${NC}"
+        echo -e "   ${YELLOW}sudo rm /etc/nginx/sites-enabled/caldera-proxy${NC}"
+        echo -e "   ${YELLOW}sudo userdel -r $CALDERA_USER${NC}"
+        echo -e "   ${YELLOW}sudo systemctl daemon-reload && sudo systemctl restart nginx${NC}"
+        echo ""
+    fi
 }
 
 ################################################################################
@@ -414,6 +453,16 @@ main() {
             --branch)
                 BRANCH="$2"
                 shift 2
+                ;;
+            --test)
+                TEST_MODE=true
+                CALDERA_USER="caldera-test"
+                CALDERA_DIR="/opt/caldera-test"
+                CALDERA_PORT="8889"
+                NGINX_PORT="8443"
+                log_info "${YELLOW}TEST MODE ENABLED${NC}"
+                log_info "Using test configuration to avoid conflicts with existing installation"
+                shift
                 ;;
             *)
                 echo "Unknown option: $1"
